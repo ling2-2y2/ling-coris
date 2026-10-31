@@ -98,6 +98,39 @@ describe('WebServerRouter 分发语义（宿主 match 镜像）', () => {
   })
 })
 
+describe('WebServerRouter 公开路径簿记（会话门让位判定源——匿名自持鉴权面名单）', () => {
+  it('exact/prefix 名单声明：isPublicPath 按同款匹配语义判定', () => {
+    const router = new WebServerRouter()
+    router.registerPublicPaths([
+      { kind: 'exact', path: '/api/auth/ping' },
+      { kind: 'prefix', path: '/api/llm-resolve' },
+    ])
+    expect(router.isPublicPath('/api/auth/ping')).toBe(true)
+    expect(router.isPublicPath('/api/llm-resolve/resolve')).toBe(true)
+    expect(router.isPublicPath('/api/llm-resolve/v1/resolve')).toBe(true)
+    // 前缀边界（`p/` 形——/api/llm-resolveX 不被误吃）
+    expect(router.isPublicPath('/api/llm-resolveX/resolve')).toBe(false)
+    // 未声明路径=false（默认全过会话门——行为零变化）
+    expect(router.isPublicPath('/api/weknora/files')).toBe(false)
+    expect(router.isPublicPath('/')).toBe(false)
+  })
+
+  it('最长前缀胜：子前缀声明不扩大父前缀判定；未声明=不可判公开', () => {
+    const router = new WebServerRouter()
+    router.registerPublicPaths([
+      { kind: 'prefix', path: '/api/weknora/embed' },
+    ])
+    expect(router.isPublicPath('/api/weknora/embed/chan-1')).toBe(true)
+    expect(router.isPublicPath('/api/weknora/files')).toBe(false)
+  })
+
+  it('重复声明 (kind,path) 抛错（同路由注册契约）', () => {
+    const router = new WebServerRouter()
+    router.registerPublicPaths([{ kind: 'prefix', path: '/api/pub' }])
+    expect(() => router.registerPublicPaths([{ kind: 'prefix', path: '/api/pub' }])).toThrow('公开路径重复声明')
+  })
+})
+
 describe('WebServerRouter 生命周期与诊断位', () => {
   it('clear 清三表+fallback，幂等可重调', async () => {
     const router = new WebServerRouter()

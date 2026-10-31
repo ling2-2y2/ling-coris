@@ -52,6 +52,8 @@ export class WebServerRouter {
   private readonly exact = new Map<string, WebServerRoute>()
   private readonly prefixes = new Map<string, WebServerRoute>()
   private readonly upgrades = new Map<string, WebServerUpgradeRoute>()
+  /** 公开路径名单（业务 config 声明——匿名自持鉴权面，会话门让位判定源）。 */
+  private readonly publicPaths = new Map<string, { kind: 'exact' | 'prefix', path: string }>()
   private fallback: WebServerHandler | undefined
 
   /** miss 观测位（诊断用——未命中告警的订阅口，缺席=零开销）。 */
@@ -73,6 +75,39 @@ export class WebServerRouter {
     }
     table.set(route.path, route)
     return () => { table.delete(route.path) }
+  }
+
+  /**
+   * 公开路径名单（会话门让位判定源——2026-10-31 用户裁定：路由白名单功能在
+   * 框架提供支持、业务 config 中完成配置）：匿名自持鉴权面（面内自持钥匙/token，
+   * 不经登录会话）在业务组合装配处声明；判定={@link isPublicPath}，消费方=
+   * 载体网关会话门（ling-common dev-gateway satokenSessionGate——公开路径让位
+   * 直达裸路由分派）。名单与路由表分离（handler 仍由业务件自注册——config 层
+   * 先行声明、路由后挂均可，零耦合）。
+   */
+  registerPublicPaths(entries: readonly { kind: 'exact' | 'prefix', path: string }[]): void {
+    for (const entry of entries) {
+      const key = `${entry.kind}:${entry.path}`
+      if (this.publicPaths.has(key)) {
+        throw new Error(`webserver: 公开路径重复声明: ${entry.path}`)
+      }
+      this.publicPaths.set(key, entry)
+    }
+  }
+
+  /**
+   * 公开路径判定（与 dispatch 同款匹配语义：exact → 最长 prefix，`p/` 边界）。
+   * 未声明=false（默认全过会话门——既有行为零变化）。
+   */
+  isPublicPath(pathname: string): boolean {
+    if (this.publicPaths.has(`exact:${pathname}`)) return true
+    let best: string | undefined
+    for (const entry of this.publicPaths.values()) {
+      if (entry.kind !== 'prefix') continue
+      if (pathname !== entry.path && !pathname.startsWith(`${entry.path}/`)) continue
+      if (best === undefined || entry.path.length > best.length) best = entry.path
+    }
+    return best !== undefined
   }
 
   /** 注册 exact-path 升级路由；重复 path 抛错。@returns 移除 disposer。 */
