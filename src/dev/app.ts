@@ -520,7 +520,23 @@ export async function runDevApp(config: DevAppConfig): Promise<DevAppHandle> {
     })
     console.log(`[${label}] vite HMR 内嵌就绪（同进程单端口 /app，无独立 vite 端口）`)
   }
-  await new Promise<void>((resolveListen) => { server.listen(port, host, () => resolveListen()) })
+  // EADDRINUSE 友好指引（2026-10-31 批8b 实弹立法）：裸 listen 的 error 事件未处理
+  // =进程栈炸无方向——撞口最常见因=旧轮验证残留实例（毁不干净），先核进程归属与
+  // 启动时间再杀（残留=探活误报+进程 env 断言拿旧环境块）；清场配方=
+  // 宿主仓 doc/agents/acceptance-sop.md 通用纪律（框架不持宿主路径字面，指名不指路）。
+  await new Promise<void>((resolveListen, rejectListen) => {
+    server.once('error', (error: NodeJS.ErrnoException) => {
+      if (error.code === 'EADDRINUSE') {
+        rejectListen(new Error(
+          `[${label}] 端口被占用 :${port}——先核对监听进程归属与启动时间（旧轮验证残留=探活误报+env 断言拿旧环境块）：
+  netstat -ano | findstr :${port}   →  PowerShell Get-CimInstance Win32_Process -Filter "ProcessId=<pid>" 看命令行，非本轮进程即杀`,
+        ))
+        return
+      }
+      rejectListen(error)
+    })
+    server.listen(port, host, () => resolveListen())
+  })
   const health = await fetch(`http://${host}:${port}/healthz`).then(
     (r) => r.json(),
     (error) => { throw new Error(`[${label}] 自检探活失败（:${port}）: ${String(error)}`) },

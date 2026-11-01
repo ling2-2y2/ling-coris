@@ -13,6 +13,7 @@ A standalone [cordis](https://github.com/koishijs/cordis)-lineage plugin runtime
 - **Timer** — `ctx.timeout` / `interval` / `throttle` / `debounce`, all owned by the surrounding fiber and disposed with it.
 - **Schema** — the schemastery builder: declarative config schemas, standard-schema v1 interface, `Volatile` stable-reference configs.
 - **Console logger** — leveled logging with colors, diff suffixes, and per-name palette.
+- **Web server router** — `exact` / `prefix` / `upgrade` route tables with longest-prefix dispatch, plus a **public-path ledger** (`registerPublicPaths` / `isPublicPath`): business composition declares anonymous self-authenticated faces (own API key/token, no login session), and the carrier's session gate yields those paths to the raw-route dispatch layer. Declare the list in composition config; never special-case the gate.
 
 ## Glossary (unified terms)
 
@@ -364,6 +365,7 @@ guards the outward-facing steps. Credentials come from `.env`
 | `src/schema` | callable schema builder + validation | schemastery |
 | `src/plugins/timer.ts` | timer mixins plugin | cordis-plugin-timer |
 | `src/plugins/logger-console` | console exporter plugin | cordis-plugin-logger-console |
+| `src/webserver` | generic web router: exact/prefix/upgrade tables, longest-prefix dispatch, public-path ledger (`registerPublicPaths`) for session-gate bypass of self-authenticated faces | original (this repo, absorbed 2026-10-24) |
 | `src/dev` | dev kit: module registry, in-process vite HMR, client source face, framework loader, build orchestration | original (this repo) |
 
 ## Concepts
