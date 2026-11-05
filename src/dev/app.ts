@@ -377,6 +377,12 @@ export async function runDevApp(config: DevAppConfig): Promise<DevAppHandle> {
       res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-store' })
       res.end(
         `import * as mod from ${JSON.stringify(fsUrl)}\n` +
+        // 全局命名空间注册（验收轮 D-2 dev 态残根修 2026-11-06）：ESM 转接 shim
+        // 自身零命名导出（ESM 静态导出制，shim 无法 re-export 动态入口），消费方
+        // （如载体 IM 面板自举）经 import 该 shim 取不到包命名空间——写入
+        // __LING_PKG_MODS__ 全局面供运行时按 id 取用，与产物态 factory 注册链
+        // 并行互补；先注册再 load，宿主装载器 apply 失败不丢注册。
+        `;(globalThis.__LING_PKG_MODS__ ??= {})[${JSON.stringify(source.id)}] = mod\n` +
         `${CLIENT_LOADER_GLOBAL}.load({ id: ${JSON.stringify(source.id)}, factory: () => mod })\n`,
       )
       return
