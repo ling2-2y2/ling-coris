@@ -23,6 +23,10 @@
       "import": "./dist/dev/index.js"
     },
     "./package.json": "./package.json",
+    "./route": {
+      "types": "./dist/route/index.d.ts",
+      "import": "./dist/route/index.js"
+    },
     "./webserver": {
       "types": "./dist/webserver/index.d.ts",
       "import": "./dist/webserver/index.js"
@@ -68,10 +72,12 @@
   },
   "dependencies": {
     "@standard-schema/spec": "^1.1.0",
+    "qs": "^6.14.0",
     "supports-color": "^11.0.0"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
+    "@types/qs": "^6.9.18",
     "esbuild": "^0.25.12",
     "tsdown": "^0.22.14",
     "tsx": "^4.22.4",

@@ -1,13 +1,14 @@
 import { defineConfig } from 'tsdown'
 
 /**
- * JS 打包（对齐上游 cordis 发布形态，三入口：运行时主出口 + /dev 开发者工具族
- * + /webserver 通用路由器）；产物扩展名取 .js（type:module 下即 ESM）。dts 不走
+ * JS 打包（对齐上游 cordis 发布形态，四入口：运行时主出口 + /dev 开发者工具族
+ * + /webserver 通用路由器 + /route 路由权限内核——2026-11-06 前端路由权限复刻批新增）；
+ * 产物扩展名取 .js（type:module 下即 ESM）。dts 不走
  * 打包器：相对路径模块增强（declare module './context.ts'）在单文件 dts 里会
  * 悬空失联——类型树改由 tsconfig.build.json 经 tsc 直出（dist 内相对路径自洽解析）。
  */
 export default defineConfig({
-  entry: ['src/index.ts', 'src/dev/index.ts', 'src/webserver/index.ts'],
+  entry: ['src/index.ts', 'src/dev/index.ts', 'src/webserver/index.ts', 'src/route/index.ts'],
   outDir: 'dist',
   format: ['esm'],
   platform: 'node',
@@ -15,6 +16,6 @@ export default defineConfig({
   dts: false,
   sourcemap: true,
   clean: true,
-  external: ['supports-color', '@standard-schema/spec'],
+  external: ['supports-color', '@standard-schema/spec', 'qs'],
   outExtensions: () => ({ js: '.js' }),
 })
